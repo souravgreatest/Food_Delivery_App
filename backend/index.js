@@ -2,7 +2,7 @@
 import express from "express";
 import mongodb from "./db.js";
 import cors from "cors";
-import router from "./routes/Auth.js";
+import router from "./routes/auth.js";
 
 const app = express();
 const PORT = 5000;
