@@ -31,7 +31,7 @@ function Login() {
         const json = response.data;
         if (json.status === "success") {
           localStorage.setItem("token", json.token);
-          localStorage.setItem("user", json.email);
+          localStorage.setItem("user", data.email);
         }
         toast.success("User login successfully!", {
           position: "top-center",
