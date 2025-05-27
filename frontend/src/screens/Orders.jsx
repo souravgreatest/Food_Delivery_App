@@ -1,6 +1,10 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Import useEffect
 import { Link } from "react-router-dom";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "bootstrap/dist/css/bootstrap.min.css";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer"; 
 
 const Orders = () => {
   const [items, setItems] = useState([]);
@@ -23,6 +27,12 @@ const Orders = () => {
         email = storedUser;
       }
 
+      if (!email) {
+        setError("User email not found. Please log in.");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.get(
         "http://localhost:5000/api/auth/orders",
         {
@@ -34,7 +44,7 @@ const Orders = () => {
         ? response.data
         : response.data.orders;
 
-      // Filter by user email
+      // Filter by user email (already done by backend if email param works, but good for robustness)
       const userOrders = orders.filter((order) => order.email === email);
 
       // Flatten nested order_data arrays
@@ -44,7 +54,7 @@ const Orders = () => {
           : [];
 
         return orderItems.map((item, idx) => {
-          console.log("Flattened item:", item); // ✅ DEBUG
+          // console.log("Flattened item:", item); // DEBUG
 
           return {
             orderId: order._id,
@@ -61,7 +71,7 @@ const Orders = () => {
       setItems(flattened);
     } catch (e) {
       console.error("Fetch error:", e);
-      setError("Unable to load orders, please try again.");
+      setError("Unable to load orders, please try again. " + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
@@ -72,69 +82,83 @@ const Orders = () => {
     setError(null);
   };
 
+  // Fetch orders automatically on component mount
+  useEffect(() => {
+    fetchOrders();
+  }, []); // Empty dependency array means this runs once on mount
+
   return (
-    <div className="container mt-4">
-      <div className="mb-3">
-        <Link to="/" className="btn btn-link p-0">
-          ← Home
-        </Link>
-      </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#212529", // Dark theme background
+        color: "#f8f9fa",     // Light text color
+        fontFamily: "Montserrat, sans-serif",
+      }}
+    >
+      <Navbar /> {/* Include Navbar */}
 
-      <h3>Your Orders</h3>
-
-      <div className="mb-3">
-        <button
-          className="btn btn-primary me-2"
-          onClick={fetchOrders}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Check Orders"}
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={clearOrders}
-          disabled={loading}
-        >
-          Clear Orders
-        </button>
-      </div>
-
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {items.length > 0 ? (
-        <div className="table-responsive">
-          <table className="table table-bordered table-hover">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Order ID</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Size</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{item.orderId}</td>
-                  <td>{item.product}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.size}</td>
-                  <td>${item.price.toFixed(2)}</td>
-                  <td>{item.status}</td>
-                  <td>{item.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="container mt-5 py-5"> {/* Added vertical padding */}
+        <div className="mb-4"> {/* Increased margin-bottom */}
+          <Link to="/menu" className="btn btn-link text-warning text-decoration-none fs-5"> {/* Styled Home link */}
+            ← Back to Home
+          </Link>
         </div>
-      ) : (
-        !loading && <p className="text-muted">No orders to display.</p>
-      )}
+
+        <h3
+          className="fs-2 fw-bold mb-4 text-warning" // Matching heading style
+          style={{ fontFamily: 'Pacifico, cursive', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+        >
+          Your Orders
+        </h3>
+
+
+        {error && <div className="alert alert-danger mt-3">{error}</div>}
+
+        {loading ? (
+          <div className="text-center my-5">
+            <div className="spinner-border text-warning" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-2">Loading your orders...</p>
+          </div>
+        ) : items.length > 0 ? (
+          <div className="table-responsive">
+            <table className="table table-dark table-striped table-hover table-bordered mt-3"> {/* Applied dark theme table styles */}
+              <thead className="table-warning"> {/* Yellow header */}
+                <tr>
+                  <th>#</th>
+                  <th>Order ID</th>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Size</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>{item.orderId.substring(0, 8)}...</td> {/* Truncate Order ID for display */}
+                    <td>{item.product}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.size}</td>
+                    <td>₹{item.price.toFixed(2)}</td> {/* Indian Rupee symbol */}
+                    <td>{item.status}</td>
+                    <td>{item.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-muted text-center mt-4">No orders to display.</p>
+        )}
+      </div>
+
+      <Footer /> {/* Include Footer */}
     </div>
   );
 };

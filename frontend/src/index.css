@@ -66,8 +66,16 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
-
+@import "tailwindcss";
 .carousel-image {
   height: 450px; 
   object-fit: contain;
+}
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }

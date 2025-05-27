@@ -6,6 +6,8 @@
   } */
   
   /* Container for Centering */
+@import "tailwindcss";
+
   .register-container {
     display: flex;
     justify-content: center;

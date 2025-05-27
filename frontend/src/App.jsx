@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import Home from './screens/Home'
+import Menu from './screens/Menu'
 import Register from './screens/Register'
 import Login from './screens/Login'
 import {Routes, Route} from "react-router-dom";
@@ -9,6 +9,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter } from "react-router-dom";
 import { CartProvider } from './components/ContextReducer'
 import Orders from './screens/Orders'
+import AboutUs from './screens/AboutUs'
+import DashBoard from './screens/DashBoard'
 
 
 function App() {
@@ -17,7 +19,9 @@ function App() {
     <CartProvider> 
     <BrowserRouter>
       <Routes>
-        <Route exact path="/" element={<Home />}></Route>
+        <Route exact path="/" element={<DashBoard />}></Route>
+        <Route exact path="/menu" element={<Menu />}></Route>
+        <Route exact path="/aboutus" element={<AboutUs />}></Route>
         <Route exact path="/register" element={<Register />}></Route>
         <Route exact path="/login" element={<Login />}></Route>
         <Route exact path="/myorder" element={<Orders />}></Route>

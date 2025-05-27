@@ -13,10 +13,7 @@ const mongodb = async () => {
 
     // for getting the data collections from database
     const foodItems = await db.collection("food_items").find({}).toArray();
-    const foodCategories = await db
-      .collection("food_category")
-      .find({})
-      .toArray();
+    const foodCategories = await db.collection("food_category").find({}).toArray();
 
     // Set to global
     global.foodData = foodItems;

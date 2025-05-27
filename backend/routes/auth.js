@@ -35,7 +35,7 @@ router.post("/orderData", async (req, res) => {
     if (!existingOrder) {
       await Order.create({
         email: req.body.email,
-        order_data: [data],
+        order_data: [data], 
       });
 
       return res
