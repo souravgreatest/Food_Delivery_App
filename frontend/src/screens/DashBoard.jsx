@@ -23,6 +23,7 @@ export default function HomePage() {
         className="d-flex align-items-center justify-content-center text-center text-white py-5"
         style={{
             paddingLeft:"100px",
+            paddingRight:"80px",
           minHeight: 'calc(100vh - 120px)', // Adjust based on navbar/footer height to fill viewport
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1570560258879-af7f8e1447ac?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjV8fHJlc3RhdXJhbnR8ZW58MHx8MHx8fDA%3D')`, // Dynamic Indian food/restaurant background
         //   backgroundSize: 'cover',
