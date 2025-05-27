@@ -8,9 +8,8 @@ export default function AboutUs() {
       className="d-flex flex-column align-items-center justify-content-center text-center p-5"
       style={{
         minHeight: '100vh',
-        // Dark background matching Navbar's primary color
         background: '#212529',
-        color: '#f8f9fa', // Light text for dark background
+        color: '#f8f9fa',
         fontFamily: 'Montserrat, sans-serif',
         paddingTop: '80px',
         position: 'relative',
@@ -22,25 +21,24 @@ export default function AboutUs() {
         style={{
           maxWidth: '800px',
           borderRadius: '20px',
-          // Darker background for the card
-          backgroundColor: '#343a40', // A slightly lighter dark gray
+          backgroundColor: '#343a40',
           border: 'none',
-          color: '#f8f9fa' // Light text inside the card
+          color: '#f8f9fa'
         }}
       >
         <h1
-          className="display-4 mb-4 text-warning" // Keep text-warning for yellow
+          className="display-4 mb-4 text-warning"
           style={{
             fontFamily: 'Pacifico, cursive',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.5)' // Darker shadow for contrast
+            textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
           }}
         >
           About Food Bar
         </h1>
 
         <p className="lead mb-4">
-          Welcome to **Food Bar** – your go-to destination for delicious, freshly prepared meals.
-          Located in the heart of **Rohtak**, we specialize in **Indian** and **Chinese** cuisine,
+          Welcome to <strong>Food Bar</strong> – your go-to destination for delicious, freshly prepared meals.
+          Located in the heart of <strong>Rohtak</strong>, we specialize in <strong>Indian</strong> and <strong>Chinese</strong> cuisine,
           crafted with quality ingredients and a passion for flavor.
         </p>
 
@@ -51,13 +49,18 @@ export default function AboutUs() {
           reliable delivery right to your doorstep.
         </p>
 
-        <p className="fs-5 fw-bold text-warning mb-4"> {/* Changed text-success to text-warning */}
+        <p className="mb-4">
+          This project is thoughtfully created by <strong>Sourav Jain</strong> and <strong>Vikas</strong>,
+          blending a love for food with a flair for technology to bring you an exceptional digital dining experience.
+        </p>
+
+        <p className="fs-5 fw-bold text-warning mb-4">
           Order now and taste the difference.
         </p>
 
         <Link
           to="/"
-          className="btn btn-outline-warning mt-3 rounded-pill fw-bold" // Changed to btn-outline-warning
+          className="btn btn-outline-warning mt-3 rounded-pill fw-bold"
           style={{
             transition: 'all 0.3s ease-in-out',
             fontFamily: 'Montserrat, sans-serif',
@@ -65,12 +68,12 @@ export default function AboutUs() {
             margin: '0 auto'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#ffc107'; // Yellow background on hover
-            e.currentTarget.style.color = '#212529'; // Dark text on hover
+            e.currentTarget.style.backgroundColor = '#ffc107';
+            e.currentTarget.style.color = '#212529';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent'; // Transparent background when not hovered
-            e.currentTarget.style.color = '#ffc107'; // Yellow text when not hovered
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = '#ffc107';
           }}
         >
           Back to Home

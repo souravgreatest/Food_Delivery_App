@@ -3,13 +3,15 @@ import React from "react";
 export default function Footer() {
   return (
     <div className="bg-dark text-light mt-5 p-2">
-      <div className="container py-3"> {/* Added py-3 for vertical padding */}
-        <footer className="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-5 border-top border-secondary"> {/* Used Bootstrap rows/cols for better layout */}
-          
+      <div className="container py-3">
+        <footer className="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-5 border-top border-secondary">
           {/* Column 1: Brand & Copyright */}
           <div className="col mb-3">
-            <a href="/" className="d-flex align-items-center mb-3 text-warning text-decoration-none" style={{ fontFamily: 'Pacifico, cursive', fontSize: '2.5rem' }}>
-              {/* You might place a logo SVG or img here */}
+            <a
+              href="/"
+              className="d-flex align-items-center mb-3 text-warning text-decoration-none"
+              style={{ fontFamily: 'Pacifico, cursive', fontSize: '2.5rem' }}
+            >
               FoodBar
             </a>
             <p className="text-light" style={{ fontSize: '0.9rem' }}>
@@ -20,7 +22,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="col mb-3"></div> {/* Empty column for spacing on larger screens */}
+          <div className="col mb-3"></div> {/* Empty column for spacing */}
 
           {/* Column 2: Quick Links */}
           <div className="col mb-3">
@@ -39,15 +41,15 @@ export default function Footer() {
             <h5 className="text-warning mb-3">Get in Touch</h5>
             <ul className="list-unstyled text-light">
               <li className="mb-2">
-                <i className="bi bi-geo-alt-fill me-2"></i> {/* Placeholder for location icon */}
+                <i className="bi bi-geo-alt-fill me-2"></i>
                 123, Flavour Street, Rohtak City, India
               </li>
               <li className="mb-2">
-                <i className="bi bi-telephone-fill me-2"></i> {/* Placeholder for phone icon */}
+                <i className="bi bi-telephone-fill me-2"></i>
                 +91 98113 42423
               </li>
               <li className="mb-2">
-                <i className="bi bi-envelope-fill me-2"></i> {/* Placeholder for email icon */}
+                <i className="bi bi-envelope-fill me-2"></i>
                 support@foodbar.in
               </li>
             </ul>
@@ -72,11 +74,16 @@ export default function Footer() {
                   <i className="bi bi-instagram me-2"></i> Instagram
                 </a>
               </li>
-              {/* You can add more social media links here */}
             </ul>
           </div>
-
         </footer>
+
+        {/* Credit Line */}
+        <div className="text-center mt-4">
+          <p className="text-secondary small mb-0">
+            Crafted with ❤️ and created by <strong>Sourav Jain</strong> & <strong>Vikas Kumar</strong> — fueling flavor and design in every byte.
+          </p>
+        </div>
       </div>
     </div>
   );
