@@ -4,13 +4,14 @@ import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "../App.css";
 
 export default function Menu() {
   const [foodCat, setFoodCat] = useState([]);
   const [foodItems, setFoodItems] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0); // For dynamic placeholder
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   const placeholders = [
     "Search for Biryani...",
@@ -20,10 +21,9 @@ export default function Menu() {
   ];
 
   useEffect(() => {
-    // Effect for dynamic placeholder text
     const interval = setInterval(() => {
       setPlaceholderIndex((prevIndex) => (prevIndex + 1) % placeholders.length);
-    }, 3000); // Change placeholder every 3 seconds
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -58,14 +58,15 @@ export default function Menu() {
         fontFamily: "Montserrat, sans-serif",
       }}
     >
+      
+
       <Navbar />
 
-      {/* --- Hero Section Start --- */}
       <div
         className="position-relative text-center d-flex align-items-center justify-content-center"
         style={{
-          height: "400px", // Increased height for a more prominent hero
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://png.pngtree.com/thumb_back/fh260/background/20230706/pngtree-d-rendered-cartoon-fast-food-deliciously-tempting-treats-at-a-restaurant-image_3804314.jpg')`, // Dynamic Indian food image with dark overlay
+          height: "400px",
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://png.pngtree.com/thumb_back/fh260/background/20230706/pngtree-d-rendered-cartoon-fast-food-deliciously-tempting-treats-at-a-restaurant-image_3804314.jpg')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           color: "#fff",
@@ -79,37 +80,46 @@ export default function Menu() {
             Order delicious meals from your favorite local restaurants.
           </p>
           <div className="d-flex justify-content-center">
-            <input
-              className="form-control me-2 w-75 bg-dark text-white border-warning"
-              type="search"
-              placeholder={search || placeholders[placeholderIndex]} // Dynamic placeholder
-              aria-label="Search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-              }}
-              style={{
-                backgroundColor: '#495057',
-                color: '#f8f9fa',
-                borderColor: '#ffc107', // Warning yellow border for emphasis
-                padding: '1rem 1.25rem', // Larger padding for prominent search bar
-                fontSize: '1.1rem' // Larger font size
-              }}
-            />
-            {search && ( // Show clear button only if search input has value
-              <button
-                className="btn btn-warning text-dark fw-bold px-4" // Larger clear button
-                onClick={() => {
-                  setSearch("");
+            <div className="input-group w-75">
+              <input
+                className="form-control bg-dark text-white border-warning" 
+                type="search"
+                placeholder={search || placeholders[placeholderIndex]}
+                aria-label="Search"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
                 }}
-              >
-                Clear
-              </button>
-            )}
+                style={{
+                  backgroundColor: '#495057',
+                  color: '#f8f9fa',
+                  borderColor: '#ffc107',
+                  padding: '1rem 1.25rem',
+                  fontSize: '1.1rem',
+                  borderRadius: search ? '0.375rem 0 0 0.375rem' : '0.375rem',
+                }}
+              />
+              {search && (
+                <button
+                  className="btn btn-outline-warning text-dark fw-bold px-3"
+                  onClick={() => {
+                    setSearch("");
+                  }}
+                  style={{
+                    backgroundColor: '#ffc107',
+                    border: '1px solid #ffc107',
+                    color: '#212529',
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-      {/* --- Hero Section End --- */}
 
       <div className="container mt-5">
         {loading ? (

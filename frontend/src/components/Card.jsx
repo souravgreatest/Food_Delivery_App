@@ -2,8 +2,10 @@ import React, { useRef, useState } from "react";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useDispatchCart, useCart } from "./ContextReducer";
+import { useNavigate } from "react-router-dom";
 
 const Card = (props) => {
+  const navigate=useNavigate();
   const dispatch = useDispatchCart();
   let data = useCart();
 
@@ -17,6 +19,12 @@ const Card = (props) => {
   let totalPrice = quantity * parseInt(sizes[size]);
 
   const handleAddToCart = async () => {
+    if(localStorage.getItem("token")===null)
+    {
+      navigate("/login");
+      // alert("Please login first!!");
+      return;
+    }
     let food = null;
     for (let item of data) {
       if (item.id === props.filterItem._id) {

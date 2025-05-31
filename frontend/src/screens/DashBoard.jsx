@@ -18,7 +18,6 @@ export default function HomePage() {
     >
       <Navbar />
 
-      {/* --- Hero Section Start --- */}
       <section
         className="d-flex align-items-center justify-content-center text-center text-white py-5"
         style={{

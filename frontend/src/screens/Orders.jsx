@@ -1,13 +1,13 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react"; // Import useEffect
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer"; 
+import Footer from "../components/Footer";
 
 const Orders = () => {
-  const [items, setItems] = useState([]);
+  const [ordersGroupedByDate, setOrdersGroupedByDate] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -19,7 +19,6 @@ const Orders = () => {
       let email;
       const storedUser = localStorage.getItem("user");
 
-      // Parse user from localStorage
       try {
         const parsed = JSON.parse(storedUser);
         email = parsed?.email || parsed;
@@ -40,78 +39,125 @@ const Orders = () => {
         }
       );
 
-      const orders = Array.isArray(response.data)
+      const fetchedOrders = Array.isArray(response.data)
         ? response.data
         : response.data.orders;
 
-      // Filter by user email (already done by backend if email param works, but good for robustness)
-      const userOrders = orders.filter((order) => order.email === email);
+      const processedIndividualOrders = fetchedOrders
+        .filter((order) => order.email === email)
+        .map((order) => {
+          const rawOrderItems = Array.isArray(order.order_data)
+            ? order.order_data.flat()
+            : [];
 
-      // Flatten nested order_data arrays
-      const flattened = userOrders.flatMap((order) => {
-        const orderItems = Array.isArray(order.order_data)
-          ? order.order_data.flat() // flatten outer array
-          : [];
+          const filteredItems = rawOrderItems.filter(item => {
+            const productName = (item.product || item.name || '').trim();
+            const quantity = parseInt(item.quantity);
+            const price = parseFloat(item.price);
 
-        return orderItems.map((item, idx) => {
-          // console.log("Flattened item:", item); // DEBUG
+            return productName && productName.toLowerCase() !== "n/a" && quantity > 0 && price > 0;
+          });
+
+          const orderTotal = filteredItems.reduce(
+            (sum, item) => sum + (parseFloat(item.price) || 0),
+            0
+          );
+
+          // Attempt to create a Date object from order.createdAt
+          const orderTimestamp = new Date(order.createdAt);
+          // Check if the created Date object is valid
+          const isValidDate = !isNaN(orderTimestamp.getTime());
 
           return {
-            orderId: order._id,
-            product: item.product || item.name || "N/A",
-            quantity: item.quantity || 0,
-            size: item.size || "N/A",
-            price: parseFloat(item.price) || 0,
-            status: item.status || "Pending",
-            date: item.Order_date || order.createdAt?.split("T")[0] || "Unknown",
+            _id: order._id,
+            // If date is invalid, use today's date for display, otherwise format the order's date
+            displayDate: isValidDate ? orderTimestamp.toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+            displayTime: isValidDate ? orderTimestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            // Always store a valid Date object for rawDate for consistent sorting.
+            // If original date is invalid, use current timestamp for sorting this 'invalid' order.
+            rawDate: isValidDate ? orderTimestamp : new Date(),
+            total: orderTotal.toFixed(2),
+            items: filteredItems.map((item) => ({
+              product: item.product || item.name || "N/A",
+              quantity: item.quantity || 0,
+              size: item.size || "N/A",
+              price: parseFloat(item.price) || 0,
+              status: item.status || "Pending",
+            })),
           };
-        });
+        })
+        .filter(order => order.items.length > 0);
+
+      const groupedOrders = processedIndividualOrders.reduce((acc, order) => {
+        const dateKey = order.displayDate; // Use the (potentially adjusted) formatted date as the key
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(order);
+        return acc;
+      }, {});
+
+      for (const date in groupedOrders) {
+        groupedOrders[date].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+      }
+
+      const sortedDateKeys = Object.keys(groupedOrders).sort((a, b) => {
+        const [aDay, aMonth, aYear] = a.split('/').map(Number);
+        const [bDay, bMonth, bYear] = b.split('/').map(Number);
+        const dateA = new Date(aYear, aMonth - 1, aDay);
+        const dateB = new Date(bYear, bMonth - 1, bDay);
+        return dateB.getTime() - dateA.getTime();
       });
 
-      setItems(flattened);
+      const finalGroupedOrders = {};
+      sortedDateKeys.forEach(key => {
+        finalGroupedOrders[key] = groupedOrders[key];
+      });
+
+      setOrdersGroupedByDate(finalGroupedOrders);
     } catch (e) {
       console.error("Fetch error:", e);
-      setError("Unable to load orders, please try again. " + (e.response?.data?.message || e.message));
+      setError(
+        "Unable to load orders, please try again. " +
+          (e.message || "Unknown error") +
+          (e.response?.data?.message ? ` (Server: ${e.response.data.message})` : '')
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const clearOrders = () => {
-    setItems([]);
-    setError(null);
-  };
-
-  // Fetch orders automatically on component mount
   useEffect(() => {
     fetchOrders();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
+
+  const today = new Date();
+  const todayFormatted = today.toLocaleDateString('en-GB');
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#212529", // Dark theme background
-        color: "#f8f9fa",     // Light text color
+        background: "#212529",
+        color: "#f8f9fa",
         fontFamily: "Montserrat, sans-serif",
       }}
     >
-      <Navbar /> {/* Include Navbar */}
+      <Navbar />
 
-      <div className="container mt-5 py-5"> {/* Added vertical padding */}
-        <div className="mb-4"> {/* Increased margin-bottom */}
-          <Link to="/menu" className="btn btn-link text-warning text-decoration-none fs-5"> {/* Styled Home link */}
+      <div className="container mt-5 py-5">
+        <div className="mb-4">
+          <Link to="/menu" className="btn btn-link text-warning text-decoration-none fs-5">
             ← Back to Home
           </Link>
         </div>
 
         <h3
-          className="fs-2 fw-bold mb-4 text-warning" // Matching heading style
+          className="fs-2 fw-bold mb-4 text-warning"
           style={{ fontFamily: 'Pacifico, cursive', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
         >
           Your Orders
         </h3>
-
 
         {error && <div className="alert alert-danger mt-3">{error}</div>}
 
@@ -122,43 +168,74 @@ const Orders = () => {
             </div>
             <p className="mt-2">Loading your orders...</p>
           </div>
-        ) : items.length > 0 ? (
-          <div className="table-responsive">
-            <table className="table table-dark table-striped table-hover table-bordered mt-3"> {/* Applied dark theme table styles */}
-              <thead className="table-warning"> {/* Yellow header */}
-                <tr>
-                  <th>#</th>
-                  <th>Order ID</th>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Size</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => (
-                  <tr key={i}>
-                    <td>{i + 1}</td>
-                    <td>{item.orderId.substring(0, 8)}...</td> {/* Truncate Order ID for display */}
-                    <td>{item.product}</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.size}</td>
-                    <td>₹{item.price.toFixed(2)}</td> {/* Indian Rupee symbol */}
-                    <td>{item.status}</td>
-                    <td>{item.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        ) : Object.keys(ordersGroupedByDate).length > 0 ? (
+          <div>
+            {Object.keys(ordersGroupedByDate).map(date => (
+              <div key={date} className="mb-5">
+                <h4 className="text-center text-info mb-4 p-2 rounded" style={{ backgroundColor: '#495057', border: '1px solid #ffc107' }}>
+                  {date === todayFormatted ? "Today's Orders" : `Orders on ${date}`}
+                </h4>
+                <div className="row row-cols-1 g-4">
+                  {ordersGroupedByDate[date].map((order) => (
+                    <div className="col-12" key={order._id}>
+                      <div
+                        className="card text-white mb-3"
+                        style={{ backgroundColor: "#343a40", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                      >
+                        <div className="card-header border-bottom border-warning d-flex justify-content-between align-items-center py-3 px-4">
+                          <h5 className="mb-0 text-warning">
+                            Order ID: <span className="text-white">{order._id.substring(0, 8)}...</span>
+                          </h5>
+                          {/* Use order.displayTime directly, as displayDate is handled by the group header */}
+                          <span className="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                            {order.displayTime}
+                          </span>
+                        </div>
+                        <div className="card-body px-4 py-3">
+                          <h6 className="card-subtitle mb-3 text-warning fw-bold">
+                            Order Items:
+                          </h6>
+                          <ul className="list-group list-group-flush">
+                            {order.items.map((item, itemIndex) => (
+                              <li
+                                key={itemIndex}
+                                className="list-group-item d-flex justify-content-between align-items-center"
+                                style={{ backgroundColor: "#495057", color: "#f8f9fa", borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+                              >
+                                <div>
+                                  <strong className="text-white">{item.product}</strong>{" "}
+                                  <span className="text-muted">
+                                    ({item.size}, Qty: {item.quantity})
+                                  </span>
+                                </div>
+                                <span className="badge bg-success rounded-pill fs-6 px-3 py-2">
+                                  ₹{item.price.toFixed(2)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="card-footer d-flex justify-content-between align-items-center bg-dark border-top border-warning py-3 px-4">
+                          <strong className="text-warning fs-5">
+                            Order Total:
+                          </strong>
+                          <span className="text-success fs-4 fw-bold">
+                            ₹{order.total}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <p className="text-muted text-center mt-4">No orders to display.</p>
+          <p className="text-muted text-center mt-4">No orders to display or all items were invalid.</p>
         )}
       </div>
 
-      <Footer /> {/* Include Footer */}
+      <Footer />
     </div>
   );
 };

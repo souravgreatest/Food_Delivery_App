@@ -57,27 +57,49 @@ export default function AboutUs() {
         <p className="fs-5 fw-bold text-warning mb-4">
           Order now and taste the difference.
         </p>
+        <div >
+          <Link
+            to="/"
+            className="btn btn-outline-warning mt-3 rounded-pill fw-bold"
+            style={{
 
-        <Link
-          to="/"
-          className="btn btn-outline-warning mt-3 rounded-pill fw-bold"
-          style={{
-            transition: 'all 0.3s ease-in-out',
-            fontFamily: 'Montserrat, sans-serif',
-            maxWidth: '200px',
-            margin: '0 auto'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#ffc107';
-            e.currentTarget.style.color = '#212529';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#ffc107';
-          }}
-        >
-          Back to Home
-        </Link>
+              transition: 'all 0.3s ease-in-out',
+              fontFamily: 'Montserrat, sans-serif',
+              maxWidth: '200px',
+              marginRight: '50px'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffc107';
+              e.currentTarget.style.color = '#212529';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#ffc107';
+            }}
+          >
+            Back to Home
+          </Link>
+          <Link
+            to="/menu"
+            className="btn btn-outline-warning mt-3 rounded-pill fw-bold"
+            style={{
+              transition: 'all 0.3s ease-in-out',
+              fontFamily: 'Montserrat, sans-serif',
+              maxWidth: '200px',
+              margin: '0 auto'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffc107';
+              e.currentTarget.style.color = '#212529';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#ffc107';
+            }}
+          >
+            Show Menu
+          </Link>
+        </div>
       </div>
     </div>
   );
