@@ -28,11 +28,11 @@ export default function Footer() {
           <div className="col mb-3">
             <h5 className="text-warning mb-3">Quick Links</h5>
             <ul className="nav flex-column">
-              <li className="nav-item mb-2"><a href="#" className="nav-link p-0 text-light">Home</a></li>
-              <li className="nav-item mb-2"><a href="#" className="nav-link p-0 text-light">About Us</a></li>
-              <li className="nav-item mb-2"><a href="#" className="nav-link p-0 text-light">Our Menu</a></li>
-              <li className="nav-item mb-2"><a href="#" className="nav-link p-0 text-light">Privacy Policy</a></li>
-              <li className="nav-item mb-2"><a href="#" className="nav-link p-0 text-light">Terms of Service</a></li>
+              <li className="nav-item mb-2"><a href="/" className="nav-link p-0 text-light">Home</a></li>
+              <li className="nav-item mb-2"><a href="/aboutus" className="nav-link p-0 text-light">About Us</a></li>
+              <li className="nav-item mb-2"><a href="/menu" className="nav-link p-0 text-light">Our Menu</a></li>
+              <li className="nav-item mb-2"><a href="/" className="nav-link p-0 text-light">Privacy Policy</a></li>
+              <li className="nav-item mb-2"><a href="/" className="nav-link p-0 text-light">Terms of Service</a></li>
             </ul>
           </div>
 
