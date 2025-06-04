@@ -1,138 +1,146 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+// Helper function to safely extract number from MongoDB extended JSON or direct value
+const getNumberValue = (value) => {
+  if (typeof value === 'object' && value !== null) {
+    if (value.$numberInt !== undefined) {
+      return parseInt(value.$numberInt, 10);
+    }
+    if (value.$numberDouble !== undefined) {
+      return parseFloat(value.$numberDouble);
+    }
+  }
+  // Fallback for direct numbers or string numbers if not in extended JSON format
+  return parseFloat(value);
+};
+
 const Orders = () => {
-  const [ordersGroupedByDate, setOrdersGroupedByDate] = useState({});
-  const [loading, setLoading] = useState(false);
+  // Renamed state to better reflect it holds "snapshots" or "groups" of items
+  const [orderedItemGroups, setOrderedItemGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let email;
+      let email = null;
       const storedUser = localStorage.getItem("user");
 
-      try {
-        const parsed = JSON.parse(storedUser);
-        email = parsed?.email || parsed;
-      } catch {
-        email = storedUser;
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          email = typeof parsed === "object" && parsed !== null && parsed.email
+            ? parsed.email
+            : String(parsed);
+        } catch (e) {
+          email = storedUser;
+        }
       }
 
       if (!email) {
-        setError("User email not found. Please log in.");
+        setError("User email not found. Please log in to view your orders.");
         setLoading(false);
         return;
       }
 
-      const response = await axios.get(
-        "http://localhost:5000/api/auth/orders",
-        {
-          params: { email },
-        }
-      );
+      const response = await axios.get("http://localhost:5000/api/auth/orders", {
+        params: { email },
+      });
 
-      const fetchedOrders = Array.isArray(response.data)
+      const fetchedBackendOrders = Array.isArray(response.data)
         ? response.data
-        : response.data.orders;
+        : response.data?.orders || [];
 
-      const processedIndividualOrders = fetchedOrders
-        .filter((order) => order.email === email)
-        .map((order) => {
-          const rawOrderItems = Array.isArray(order.order_data)
-            ? order.order_data.flat()
-            : [];
+      const allItemGroups = [];
 
-          const filteredItems = rawOrderItems.filter(item => {
-            const productName = (item.product || item.name || '').trim();
-            const quantity = parseInt(item.quantity);
-            const price = parseFloat(item.price);
+      fetchedBackendOrders
+        .filter(order => order.email === email)
+        .forEach(order => {
+          const orderDate = new Date(order.createdAt);
+          const validDate = !isNaN(orderDate.getTime());
 
-            return productName && productName.toLowerCase() !== "n/a" && quantity > 0 && price > 0;
-          });
+          const displayDate = validDate ? orderDate.toLocaleDateString("en-GB") : null;
+          const displayTime = validDate
+            ? orderDate.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            : null;
 
-          const orderTotal = filteredItems.reduce(
-            (sum, item) => sum + (parseFloat(item.price) || 0),
-            0
-          );
+          // Iterate over each inner array (snapshot) within order_data
+          // The order_data in your example is: [[...],[...]]
+          // So, order.order_data[0] is the first inner array (snapshot)
+          // order.order_data[1] is the second inner array (snapshot), etc.
+          if (Array.isArray(order.order_data)) {
+            order.order_data.forEach((itemGroupArray, groupIndex) => {
+              const validItemsInGroup = [];
+              let groupTotal = 0;
 
-          // Attempt to create a Date object from order.createdAt
-          const orderTimestamp = new Date(order.createdAt);
-          // Check if the created Date object is valid
-          const isValidDate = !isNaN(orderTimestamp.getTime());
+              // Filter out non-item objects (like {} or {"Order_date":null})
+              // and process valid items within this current group
+              itemGroupArray.forEach(item => {
+                const quantity = getNumberValue(item.quantity);
+                const price = getNumberValue(item.price);
+                const productName = (item.product || item.name || "").trim();
+                const size = item.size || null;
 
-          return {
-            _id: order._id,
-            // If date is invalid, use today's date for display, otherwise format the order's date
-            displayDate: isValidDate ? orderTimestamp.toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
-            displayTime: isValidDate ? orderTimestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            // Always store a valid Date object for rawDate for consistent sorting.
-            // If original date is invalid, use current timestamp for sorting this 'invalid' order.
-            rawDate: isValidDate ? orderTimestamp : new Date(),
-            total: orderTotal.toFixed(2),
-            items: filteredItems.map((item) => ({
-              product: item.product || item.name || "N/A",
-              quantity: item.quantity || 0,
-              size: item.size || "N/A",
-              price: parseFloat(item.price) || 0,
-              status: item.status || "Pending",
-            })),
-          };
-        })
-        .filter(order => order.items.length > 0);
+                if (
+                  productName &&
+                  productName.toLowerCase() !== "n/a" &&
+                  !isNaN(quantity) && quantity > 0 &&
+                  !isNaN(price) && price > 0
+                ) {
+                  validItemsInGroup.push({
+                    id: item.id,
+                    product: productName,
+                    quantity: quantity,
+                    size: size,
+                    price: price,
+                  });
+                  groupTotal += price; // Accumulate total for this specific group
+                }
+              });
 
-      const groupedOrders = processedIndividualOrders.reduce((acc, order) => {
-        const dateKey = order.displayDate; // Use the (potentially adjusted) formatted date as the key
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        acc[dateKey].push(order);
-        return acc;
-      }, {});
+              // Only add this group if it contains valid items
+              if (validItemsInGroup.length > 0) {
+                allItemGroups.push({
+                  // Unique key using original order _id and the index of this item group
+                  key: `${order._id}-${groupIndex}`,
+                  originalOrderId: order._id,
+                  groupItems: validItemsInGroup,
+                  groupTotal: groupTotal.toFixed(2),
+                  displayDate: displayDate,
+                  displayTime: displayTime,
+                  rawDate: validDate ? orderDate : new Date(), // Keep raw date for sorting
+                });
+              }
+            });
+          }
+        });
 
-      for (const date in groupedOrders) {
-        groupedOrders[date].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
-      }
+      // Sort all item groups by their original order date (most recent first)
+      allItemGroups.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
 
-      const sortedDateKeys = Object.keys(groupedOrders).sort((a, b) => {
-        const [aDay, aMonth, aYear] = a.split('/').map(Number);
-        const [bDay, bMonth, bYear] = b.split('/').map(Number);
-        const dateA = new Date(aYear, aMonth - 1, aDay);
-        const dateB = new Date(bYear, bMonth - 1, bDay);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      const finalGroupedOrders = {};
-      sortedDateKeys.forEach(key => {
-        finalGroupedOrders[key] = groupedOrders[key];
-      });
-
-      setOrdersGroupedByDate(finalGroupedOrders);
+      setOrderedItemGroups(allItemGroups);
     } catch (e) {
-      console.error("Fetch error:", e);
+      console.error("Error fetching orders:", e);
       setError(
-        "Unable to load orders, please try again. " +
-          (e.message || "Unknown error") +
-          (e.response?.data?.message ? ` (Server: ${e.response.data.message})` : '')
+        "Unable to load orders. Please try again. " +
+        (e.response?.data?.message || e.message || "Unknown error")
       );
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
-
-  const today = new Date();
-  const todayFormatted = today.toLocaleDateString('en-GB');
+  }, [fetchOrders]);
 
   return (
     <div
@@ -154,9 +162,9 @@ const Orders = () => {
 
         <h3
           className="fs-2 fw-bold mb-4 text-warning"
-          style={{ fontFamily: 'Pacifico, cursive', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+          style={{ fontFamily: "Pacifico, cursive", textShadow: "1px 1px 2px rgba(0,0,0,0.2)" }}
         >
-          Your Orders
+          Your Purchases
         </h3>
 
         {error && <div className="alert alert-danger mt-3">{error}</div>}
@@ -166,72 +174,58 @@ const Orders = () => {
             <div className="spinner-border text-warning" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
-            <p className="mt-2">Loading your orders...</p>
+            <p className="mt-2">Loading your purchases...</p>
           </div>
-        ) : Object.keys(ordersGroupedByDate).length > 0 ? (
-          <div>
-            {Object.keys(ordersGroupedByDate).map(date => (
-              <div key={date} className="mb-5">
-                <h4 className="text-center text-info mb-4 p-2 rounded" style={{ backgroundColor: '#495057', border: '1px solid #ffc107' }}>
-                  {date === todayFormatted ? "Today's Orders" : `Orders on ${date}`}
-                </h4>
-                <div className="row row-cols-1 g-4">
-                  {ordersGroupedByDate[date].map((order) => (
-                    <div className="col-12" key={order._id}>
-                      <div
-                        className="card text-white mb-3"
-                        style={{ backgroundColor: "#343a40", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
-                      >
-                        <div className="card-header border-bottom border-warning d-flex justify-content-between align-items-center py-3 px-4">
-                          <h5 className="mb-0 text-warning">
-                            Order ID: <span className="text-white">{order._id.substring(0, 8)}...</span>
-                          </h5>
-                          {/* Use order.displayTime directly, as displayDate is handled by the group header */}
-                          <span className="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
-                            {order.displayTime}
+        ) : orderedItemGroups.length > 0 ? (
+          <div className="row row-cols-1 g-4">
+            {orderedItemGroups.map((itemGroup, index) => (
+              <div className="col-12" key={itemGroup.key}>
+                <div
+                  className="card text-white mb-3"
+                  style={{ backgroundColor: "#343a40", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                >
+                  <div className="card-header border-bottom border-warning d-flex justify-content-between align-items-center py-3 px-4">
+                    <h5 className="mb-0 text-warning">
+                      Purchase #{index + 1}
+                    </h5>
+                    {itemGroup.displayDate && (
+                      <span className="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                        {itemGroup.displayDate} {itemGroup.displayTime}
+                      </span>
+                    )}
+                  </div>
+                  <div className="card-body px-4 py-3">
+                    <h6 className="card-subtitle mb-3 text-warning fw-bold">Items in this purchase:</h6>
+                    <ul className="list-group list-group-flush">
+                      {itemGroup.groupItems.map((item, itemIdx) => (
+                        <li
+                          key={itemIdx} // OK to use index here as items within a group are stable
+                          className="list-group-item d-flex justify-content-between align-items-center"
+                          style={{ backgroundColor: "#495057", color: "#f8f9fa", borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+                        >
+                          <div>
+                            <strong className="text-white">{item.product}</strong>{" "}
+                            <span className="text-muted">
+                              ({item.size ? item.size : "N/A Size"}, Qty: {item.quantity})
+                            </span>
+                          </div>
+                          <span className="badge bg-success rounded-pill fs-6 px-3 py-2">
+                            ₹{item.price.toFixed(2)}
                           </span>
-                        </div>
-                        <div className="card-body px-4 py-3">
-                          <h6 className="card-subtitle mb-3 text-warning fw-bold">
-                            Order Items:
-                          </h6>
-                          <ul className="list-group list-group-flush">
-                            {order.items.map((item, itemIndex) => (
-                              <li
-                                key={itemIndex}
-                                className="list-group-item d-flex justify-content-between align-items-center"
-                                style={{ backgroundColor: "#495057", color: "#f8f9fa", borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-                              >
-                                <div>
-                                  <strong className="text-white">{item.product}</strong>{" "}
-                                  <span className="text-muted">
-                                    ({item.size}, Qty: {item.quantity})
-                                  </span>
-                                </div>
-                                <span className="badge bg-success rounded-pill fs-6 px-3 py-2">
-                                  ₹{item.price.toFixed(2)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="card-footer d-flex justify-content-between align-items-center bg-dark border-top border-warning py-3 px-4">
-                          <strong className="text-warning fs-5">
-                            Order Total:
-                          </strong>
-                          <span className="text-success fs-4 fw-bold">
-                            ₹{order.total}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="card-footer d-flex justify-content-between align-items-center bg-dark border-top border-warning py-3 px-4">
+                    <strong className="text-warning fs-5">Total for this Purchase:</strong>
+                    <span className="text-success fs-4 fw-bold">₹{itemGroup.groupTotal}</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted text-center mt-4">No orders to display or all items were invalid.</p>
+          <p className="text-muted text-center mt-4">No valid purchases to display.</p>
         )}
       </div>
 
