@@ -21,7 +21,6 @@ const getNumberValue = (value) => {
 };
 
 const Orders = () => {
-  // Renamed state to better reflect it holds "snapshots" or "groups" of items
   const [orderedItemGroups, setOrderedItemGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -72,17 +71,18 @@ const Orders = () => {
             ? orderDate.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
             : null;
 
-          // Iterate over each inner array (snapshot) within order_data
-          // The order_data in your example is: [[...],[...]]
-          // So, order.order_data[0] is the first inner array (snapshot)
-          // order.order_data[1] is the second inner array (snapshot), etc.
           if (Array.isArray(order.order_data)) {
             order.order_data.forEach((itemGroupArray, groupIndex) => {
+              // --- ADDED CHECK HERE ---
+              if (!Array.isArray(itemGroupArray)) {
+                console.warn(`Skipping non-array element in order_data for order ID ${order._id}:`, itemGroupArray);
+                return; // Skip this iteration if itemGroupArray is not an array
+              }
+              // --- END ADDED CHECK ---
+
               const validItemsInGroup = [];
               let groupTotal = 0;
 
-              // Filter out non-item objects (like {} or {"Order_date":null})
-              // and process valid items within this current group
               itemGroupArray.forEach(item => {
                 const quantity = getNumberValue(item.quantity);
                 const price = getNumberValue(item.price);
@@ -102,28 +102,25 @@ const Orders = () => {
                     size: size,
                     price: price,
                   });
-                  groupTotal += price; // Accumulate total for this specific group
+                  groupTotal += price;
                 }
               });
 
-              // Only add this group if it contains valid items
               if (validItemsInGroup.length > 0) {
                 allItemGroups.push({
-                  // Unique key using original order _id and the index of this item group
                   key: `${order._id}-${groupIndex}`,
                   originalOrderId: order._id,
                   groupItems: validItemsInGroup,
                   groupTotal: groupTotal.toFixed(2),
                   displayDate: displayDate,
                   displayTime: displayTime,
-                  rawDate: validDate ? orderDate : new Date(), // Keep raw date for sorting
+                  rawDate: validDate ? orderDate : new Date(),
                 });
               }
             });
           }
         });
 
-      // Sort all item groups by their original order date (most recent first)
       allItemGroups.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
 
       setOrderedItemGroups(allItemGroups);
@@ -199,7 +196,7 @@ const Orders = () => {
                     <ul className="list-group list-group-flush">
                       {itemGroup.groupItems.map((item, itemIdx) => (
                         <li
-                          key={itemIdx} // OK to use index here as items within a group are stable
+                          key={itemIdx}
                           className="list-group-item d-flex justify-content-between align-items-center"
                           style={{ backgroundColor: "#495057", color: "#f8f9fa", borderBottom: "1px solid rgba(255,255,255,0.1)" }}
                         >
